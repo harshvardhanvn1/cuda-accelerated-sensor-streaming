@@ -2,3 +2,22 @@ venv/
 *.pyc
 __pycache__/
 *.py
+
+# Data directories
+data_pamap2/
+data_edge_iiot/
+
+# Binary outputs
+*.bin
+*.o
+cpu_baseline
+cuda_naive
+cuda_optimized
+data_prep
+data_prep_full
+scenario*
+
+# Profiling outputs
+*.nsys-rep
+*.qdrep
+*.sqlite
