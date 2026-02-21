@@ -15,7 +15,10 @@ cuda_naive
 cuda_optimized
 data_prep
 data_prep_full
-scenario*
+scenario1_concurrent
+scenario2_batch
+scenario3_pipeline
+scenario_combined
 
 # Profiling outputs
 *.nsys-rep
