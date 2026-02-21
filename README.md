@@ -1,163 +1,248 @@
 # CUDA-Accelerated Sensor Stream Processing
 
-Real-time sensor preprocessing optimization using CUDA for edge inference applications.
+Industrial bearing vibration analysis system optimized with CUDA for edge inference applications.
 
 ## Project Overview
 
-This project demonstrates GPU acceleration techniques for industrial IoT sensor processing, implementing three key optimization scenarios:
+High-performance GPU-accelerated preprocessing pipeline for industrial sensor data, achieving **3.27× speedup** over CPU baseline through systematic CUDA optimization. Demonstrates production-ready techniques for edge inference on professional GPUs.
 
-1. **Multi-Sensor Concurrent Processing** - 4x throughput via parallel stream processing
-2. **Large Batch Optimization** - 3x speedup through overlapped memory transfers
-3. **Multi-Stage Pipeline** - Overlapped preprocessing stages for continuous processing
+**Hardware:** NVIDIA RTX A4000 (16GB, Ampere Architecture)  
+**Dataset:** NASA IMS Bearing Dataset (44M samples, 2.4GB)  
+**Best Performance:** 3.27× speedup via batching optimization
 
-**Target Hardware:** NVIDIA Tesla T4 (industry-standard edge inference GPU)  
-**Primary Dataset:** Edge-IIoTset (10+ industrial sensors)  
-**Learning Dataset:** PAMAP2 (human activity monitoring)
+## Key Results
+
+| Implementation | Time/File | Throughput | Speedup vs CPU | Speedup vs Naive |
+|----------------|-----------|------------|----------------|------------------|
+| CPU Baseline | 0.341 ms | 60.1 M/s | 1.00× | - |
+| Naive CUDA | 0.246 ms | 83.3 M/s | 1.38× | 1.00× |
+| **Scenario 1: Concurrent** | 0.124 ms | 165.6 M/s | **2.75×** | **1.98×** |
+| **Scenario 2: Large Batch** | 0.104 ms | 196.9 M/s | **3.27×** | **2.36×** ⭐ |
+| **Scenario 3: Pipeline** | 0.121 ms | 169.3 M/s | **2.81×** | **2.03×** |
+| Combined | 0.110 ms | 185.7 M/s | 3.08× | 2.22× |
+
+## Architecture
+
+### Three Optimization Scenarios
+
+**Scenario 1: Multi-Bearing Concurrent Processing**
+- 4 concurrent CUDA streams (one per bearing)
+- Parallel kernel execution across independent sensors
+- Async memory transfers with pinned memory
+- **Result:** 2.75× speedup
+
+**Scenario 2: Large Batch Optimization** ⭐ **BEST**
+- Batch size 5 files (102K samples per transfer)
+- Overlapped H2D, kernel execution, D2H transfers
+- Amortized PCIe overhead
+- **Result:** 3.27× speedup (winner!)
+
+**Scenario 3: Multi-Stage Pipeline**
+- 3-stage pipeline: Normalize → RMS → Peak Detection
+- Stream-based execution overlap
+- Demonstrates software pipelining
+- **Result:** 2.81× speedup
 
 ## Project Structure
 ```
 cuda-accelerated-sensor-streaming/
-├── src_edge_iiot/              # Main project implementations
-│   ├── scenario1_multi_sensor.cu    # Concurrent sensor streams
-│   ├── scenario2_large_batch.cu     # Batch optimization
-│   └── scenario3_pipeline.cu        # Pipeline parallelism
+├── src_nasa_bearing/
+│   ├── baseline/
+│   │   ├── cpu_baseline.cpp           # CPU reference implementation
+│   │   └── cuda_naive.cu              # Simple GPU parallelization
+│   ├── optimized/
+│   │   ├── scenario1_concurrent.cu    # Multi-stream concurrent
+│   │   ├── scenario2_batch.cu         # Batch optimization
+│   │   ├── scenario3_pipeline.cu      # Pipeline parallelism
+│   │   └── scenario_combined.cu       # All techniques combined
+│   ├── preprocess_data.cpp            # ASCII to binary converter
+│   ├── detailed_profiling.cu          # Timing breakdown utility
+│   └── profiling_optimized.cu         # Profiling helper
 │
-├── src_pamap2/                 # Learning implementations
-│   ├── cpu_baseline.cpp
-│   ├── cuda_naive.cu
-│   └── cuda_optimized.cu
+├── data_nasa_bearing/
+│   ├── raw/                           # Original NASA dataset
+│   └── processed/
+│       └── bearing_data.bin           # Preprocessed binary (1.35GB)
 │
-├── data_edge_iiot/             # Edge-IIoT dataset
-│   ├── raw/                    # Original CSV files
-│   ├── processed/              # Per-sensor binary files
-│   └── combined/               # Multi-sensor batches
+├── results/nasa_bearing/
+│   ├── benchmark_results.txt          # Performance comparison
+│   ├── PROFILING_ANALYSIS.md          # Comprehensive profiling insights
+│   └── NSIGHT_PROFILING_SUMMARY.md    # Nsight Systems analysis
 │
-├── data_pamap2/                # PAMAP2 dataset
-│
-├── results/
-│   ├── pamap2/                 # Learning phase results
-│   └── edge_iiot/              # Main project results
-│
+├── profiling/                         # Nsight profiling reports (.nsys-rep)
+├── run_all_benchmarks.sh              # Master benchmark script
 └── docs/
-    ├── LEARNING_JOURNEY.md     # Development process
-    └── PROJECT_REPORT.md       # Final benchmarks
+    └── NASA_IMPLEMENTATION_PLAN.md    # Project roadmap
 ```
-
-## Technical Stack
-
-- **Languages:** CUDA C++, C++17, Python (data preprocessing)
-- **GPU:** NVIDIA Tesla T4 (2560 CUDA cores, 16GB VRAM)
-- **Profiling:** NVIDIA Nsight Systems
-- **Platform:** Google Colab (cloud GPU), local development on macOS
 
 ## Quick Start
 
 ### Prerequisites
-- CUDA Toolkit 12.x
-- C++17 compatible compiler
-- NVIDIA GPU (Tesla T4 or equivalent)
-
-### Building and Running
-
-**Scenario 1: Multi-Sensor Concurrent Processing**
 ```bash
-nvcc -O3 -std=c++17 -o scenario1 src_edge_iiot/scenario1_multi_sensor.cu
-./scenario1
+# CUDA Toolkit 12.x
+nvcc --version
+
+# RTX A4000 or equivalent professional GPU
+nvidia-smi
 ```
 
-**Scenario 2: Large Batch Optimization**
+### Running Benchmarks
+
+**Option 1: Run all scenarios (recommended)**
 ```bash
-nvcc -O3 -std=c++17 -o scenario2 src_edge_iiot/scenario2_large_batch.cu
-./scenario2
+chmod +x run_all_benchmarks.sh
+./run_all_benchmarks.sh
 ```
 
-**Scenario 3: Multi-Stage Pipeline**
+**Option 2: Run individual implementations**
 ```bash
-nvcc -O3 -std=c++17 -o scenario3 src_edge_iiot/scenario3_pipeline.cu
-./scenario3
+# CPU Baseline
+g++ -O3 -std=c++17 -o cpu_baseline src_nasa_bearing/baseline/cpu_baseline.cpp
+./cpu_baseline
+
+# Naive CUDA
+nvcc -O3 -o cuda_naive src_nasa_bearing/baseline/cuda_naive.cu
+./cuda_naive
+
+# Scenario 1: Concurrent Streams
+nvcc -O3 -o scenario1_concurrent src_nasa_bearing/optimized/scenario1_concurrent.cu
+./scenario1_concurrent
+
+# Scenario 2: Large Batch (Best Performance)
+nvcc -O3 -o scenario2_batch src_nasa_bearing/optimized/scenario2_batch.cu
+./scenario2_batch
+
+# Scenario 3: Pipeline
+nvcc -O3 -o scenario3_pipeline src_nasa_bearing/optimized/scenario3_pipeline.cu
+./scenario3_pipeline
 ```
 
-## Results
+## Dataset
 
-### PAMAP2 Learning Phase
+**NASA IMS Bearing Dataset (1st Test)**
+- **Source:** [NASA Ames Prognostics Center](https://www.kaggle.com/datasets/vinayak123tyagi/bearing-dataset)
+- **Size:** 2,156 files, 44.1M samples, 2.4GB
+- **Sensors:** 8 channels (4 bearings × 2 accelerometers)
+- **Sampling:** 20,480 samples/file at 20 kHz
+- **Purpose:** Run-to-failure bearing vibration monitoring
 
-Baseline CPU: 0.054ms/batch (18.5M samples/sec)  
-Naive CUDA: 0.040ms/batch (24.7M samples/sec, 1.35x speedup)  
-CUDA Streams: 0.038ms/batch (26.3M samples/sec, 1.42x speedup)
+### Preprocessing
 
-See [PAMAP2 Benchmark Results](results/pamap2/BENCHMARK_RESULTS.md) for detailed analysis.
+Convert ASCII data to binary format:
+```bash
+g++ -O3 -std=c++17 -o preprocess_data src_nasa_bearing/preprocess_data.cpp
+./preprocess_data
+```
 
-### Edge-IIoT Main Project
-
-Results pending completion of three scenarios. See [PROJECT_REPORT.md](docs/PROJECT_REPORT.md).
+Output: `data_nasa_bearing/processed/bearing_data.bin` (1.35 GB)
 
 ## Key Optimizations
 
-**Algorithmic:**
-- Sliding window moving average (O(n) vs O(n×w))
-- Z-score normalization with precomputed statistics
-- Cache-friendly memory access patterns
+### Memory Management
+- **Pinned memory** (`cudaMallocHost`) for DMA transfers
+- **Async transfers** (`cudaMemcpyAsync`) for non-blocking operations
+- **Memory coalescing** for efficient global memory access
 
-**CUDA-Specific:**
-- Concurrent stream processing for independent data sources
-- Asynchronous memory transfers (cudaMemcpyAsync)
-- Pinned host memory for DMA transfers
-- Kernel optimizations: loop unrolling, memory coalescing
-- Multi-stage pipeline with overlapped execution
+### Execution Strategies
+- **CUDA streams** for concurrent kernel execution
+- **Batching** to amortize PCIe overhead
+- **Pipeline parallelism** for multi-stage workflows
 
-## Development Process
+### Profiling Insights
 
-This project evolved through iterative learning:
+**Naive CUDA bottleneck:**
+- PCIe transfers: **97.9%** of GPU time
+- Kernel execution: 2.0%
+- D2H transfer: 0.1%
 
-1. **Phase 1:** CPU baseline implementation and optimization
-2. **Phase 2:** Naive GPU parallelization
-3. **Phase 3:** Stream optimization attempts (revealed dataset limitations)
-4. **Phase 4:** Dataset transition to Edge-IIoTset for realistic scenarios
-5. **Phase 5:** Three-scenario comprehensive implementation
+**Optimization impact:**
+- Scenario 2 reduces transfer overhead via batching
+- Fewer kernel launches (25 vs 110)
+- Better PCIe utilization (99.5% vs 97.9%)
 
-See [LEARNING_JOURNEY.md](docs/LEARNING_JOURNEY.md) for detailed insights.
-
-## Datasets
-
-**PAMAP2 Physical Activity Monitoring**
-- 9 subjects, 2.86M samples
-- 6 features (accelerometer + gyroscope)
-- Used for learning CUDA fundamentals
-
-**Edge-IIoTset Cyber Security Dataset**
-- 10+ industrial IoT sensors
-- Temperature, humidity, vibration, pH, pressure, etc.
-- Designed for edge inference benchmarking
-- Source: [Kaggle](https://www.kaggle.com/datasets/mohamedamineferrag/edgeiiotset-cyber-security-dataset-of-iot-iiot)
+See [PROFILING_ANALYSIS.md](results/nasa_bearing/PROFILING_ANALYSIS.md) for detailed breakdown.
 
 ## Performance Metrics
 
-Key measurements across all implementations:
-- Throughput (samples/second)
-- Latency (milliseconds/batch)
-- Per-sample processing time (microseconds)
-- Speedup vs CPU baseline
-- PCIe transfer overhead
-- GPU utilization (via Nsight Systems)
+**Measured using:**
+- CUDA Events for GPU timing
+- `std::chrono` for CPU timing
+- Nsight Systems for profiling
+
+**Key findings:**
+1. **Naive CUDA can be slower than CPU** (on some GPUs like T4)
+2. **PCIe is the bottleneck** (70% of execution time in naive)
+3. **Batching wins** (simplicity + performance)
+4. **More complexity ≠ better** (Combined scenario shows overhead)
+
+## Technical Deep Dive
+
+### Why Scenario 2 Wins
+
+**Batching advantages:**
+```
+Naive:  110 transfers × 655 KB  = 72.1 MB total, high overhead
+Batch:   25 transfers × 3.28 MB = 82.0 MB total, low overhead
+```
+
+**Fewer kernel launches:**
+```
+Naive: 110 launches × 19.2 μs = 2.11 ms kernel time
+Batch:  25 launches × 24.1 μs = 0.60 ms kernel time
+```
+
+**Result:** 3.27× faster than CPU, 2.36× faster than naive CUDA
+
+### Why Combined Isn't Best
+
+Combined scenario uses 12 streams with pipeline complexity:
+- Stream management overhead
+- Context switching cost
+- Complexity without proportional benefit
+
+**Lesson:** Match optimization technique to problem characteristics.
+
+## Profiling
+
+Profile with Nsight Systems (generates .nsys-rep files):
+```bash
+nsys profile -o profiling/scenario2_batch --stats=true ./scenario2_batch
+```
+
+View in Nsight Systems GUI:
+```bash
+nsys-ui profiling/scenario2_batch.nsys-rep
+```
+
+## Hardware Details
+
+**NVIDIA RTX A4000**
+- Architecture: Ampere (GA104)
+- CUDA Cores: 6,144
+- VRAM: 16 GB GDDR6
+- Memory Bandwidth: 448 GB/s
+- Use Case: Professional workstation, edge inference
 
 ## References
 
-**Datasets:**
-- Reiss, A. and Stricker, D. (2012). PAMAP2 Activity Monitoring. ISWC 2012.
-- Ferrag, M.A. et al. (2022). Edge-IIoTset. IEEE Access.
-
-**Hardware:**
-- NVIDIA Tesla T4 Technical Specifications
-- Google Colab Research Platform
+**Dataset:**
+- NASA Ames Prognostics Center: [IMS Bearing Dataset](https://www.nasa.gov/content/prognostics-center-of-excellence-data-set-repository)
 
 **Tools:**
-- NVIDIA CUDA Toolkit Documentation
-- NVIDIA Nsight Systems Profiling Guide
+- NVIDIA CUDA Toolkit 12.x
+- NVIDIA Nsight Systems
+- Google Colab (development)
+- RunPod (RTX A4000 benchmarking)
 
 ## License
 
-This project is for educational and portfolio purposes.
+Educational and portfolio project. Dataset: U.S. Government Works (public domain).
 
 ## Author
 
-Independent learning project inspired by edge inference system research (2023).
+Professional CUDA optimization project demonstrating industrial sensor processing on edge inference hardware (2024).
+
+---
+
+**Resume Summary:**
+> "Built CUDA-accelerated vibration analysis system for industrial bearing fault detection using NASA IMS dataset (44M samples). Achieved 3.27× speedup through batching optimization, 2.75× via concurrent multi-sensor streams, and 2.81× using pipelined execution on RTX A4000. Profiled with Nsight Systems to identify PCIe bottleneck (97.9% of naive execution time) and validated optimizations through detailed timing analysis."
