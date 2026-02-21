@@ -21,3 +21,7 @@ scenario*
 *.nsys-rep
 *.qdrep
 *.sqlite
+
+# NASA Bearing Dataset (large binary files)
+data_nasa_bearing/raw/
+data_nasa_bearing/processed/
