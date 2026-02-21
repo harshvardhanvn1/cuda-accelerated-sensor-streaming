@@ -1,11 +1,11 @@
 NASA Bearing CUDA Performance Comparison
-Date: Sat Feb 21 09:06:32 PM UTC 2026
+Date: Sat Feb 21 21:53:39 UTC 2026
 
 Implementation                    Time (ms)      Throughput     vs CPU   vs Naive
 -----------------------------------------------------------------------------
-CPU Baseline                          0.360        56858880      1.00x          -
-Naive CUDA                            0.365        56105360       .98x      1.00x
-Scenario 1: Concurrent                0.109       187708592      3.30x      3.34x
-Scenario 2: Large Batch               0.100       204180576      3.59x      3.63x
-Scenario 3: Pipeline                  0.109       187897616      3.30x      3.34x
-Combined: All Optimizations           0.112       182381904      3.20x      3.25x
+CPU Baseline                          0.341        60143312      1.00x          -
+Naive CUDA                            0.246        83340824      1.38x      1.00x
+Scenario 1: Concurrent                0.124       165632320      2.75x      1.98x
+Scenario 2: Large Batch               0.104       196937616      3.27x      2.36x
+Scenario 3: Pipeline                  0.121       169278576      2.81x      2.03x
+Combined: All Optimizations           0.110       185706960      3.08x      2.22x
