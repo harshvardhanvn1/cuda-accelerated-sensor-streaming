@@ -243,6 +243,3 @@ Educational and portfolio project. Dataset: U.S. Government Works (public domain
 Professional CUDA optimization project demonstrating industrial sensor processing on edge inference hardware (2024).
 
 ---
-
-**Resume Summary:**
-> "Built CUDA-accelerated vibration analysis system for industrial bearing fault detection using NASA IMS dataset (44M samples). Achieved 3.27× speedup through batching optimization, 2.75× via concurrent multi-sensor streams, and 2.81× using pipelined execution on RTX A4000. Profiled with Nsight Systems to identify PCIe bottleneck (97.9% of naive execution time) and validated optimizations through detailed timing analysis."
